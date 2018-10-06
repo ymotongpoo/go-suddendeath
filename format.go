@@ -127,7 +127,7 @@ func centerAlign(line string, width int) string {
 }
 
 // Body returns the message body part of "突然の死" like message.
-// Body adds side ornamengs
+// Body adds side ornament characters and spaces in each lines.
 func Body(msg string) string {
 	lines := strings.Split(msg, "\n")
 	maxWidth := 0
