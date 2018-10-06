@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	suddendeath.FooterChars = []string{"Y", "^"}
+	suddendeath.FooterRunes = []rune{'Y', '^'}
 	suddendeath.Print("hello")
 	suddendeath.Print("どうして\nこうなった")
 	suddendeath.Print("突然の死\nジェネレータ")

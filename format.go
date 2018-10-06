@@ -22,16 +22,16 @@ import (
 )
 
 var (
-	HeaderChars = []string{"人"}
-	FooterChars = []string{"Ｙ"}
+	HeaderRunes = []rune{'人'}
+	FooterRunes = []rune{'Ｙ'}
 	LeftChar    = "＞"
 	RightChar   = "＜"
 )
 
 // cycle is a helper function to repeatedly yeild strings
 // specified in item variadic parameters.
-func cycle(item ...string) <-chan string {
-	cycleCh := make(chan string)
+func cycle(item ...rune) <-chan rune {
+	cycleCh := make(chan rune)
 	go func() {
 		for {
 			for _, i := range item {
@@ -44,37 +44,43 @@ func cycle(item ...string) <-chan string {
 
 // repeatPart returns repeated part in the header and footers
 // to fit the width with specified header and footer chars.
-func repeatPart(runes []string, width int) string {
+func repeatPart(runes []rune, width int) string {
 	if len(runes) == 1 {
-		w := MessageWidth(runes[0])
-		return strings.Repeat(runes[0], width/w+width%1)
+		w := RuneWidth(runes[0])
+		return strings.Repeat(string(runes[0]), width/w+width%1)
 	}
 	iter := cycle(runes...)
 	part := ""
 	for i, w := 0, 0; i < width; i += w {
 		r := <-iter
-		w = MessageWidth(r)
-		part += r
+		w = RuneWidth(r)
+		part += string(r)
 	}
 	return part
 }
 
+// RuneWidth returns the display width of r.
+func RuneWidth(r rune) int {
+	p := width.LookupRune(r)
+	switch p.Kind() {
+	case width.EastAsianWide, width.EastAsianFullwidth:
+		return 2
+	case width.EastAsianNarrow, width.EastAsianHalfwidth:
+		return 1
+	default:
+		return 1
+	}
+}
+
 // MessageWidth is the display width of assined string msg.
+// msg is expected to be single line; i.e. not including \r and \n.
 // It is based on the information from Unicode. So-called
 // Multibyte characters' width is counted as 2. Other characters'
 // are 1. See https://godoc.org/golang.org/x/text/width for the details.
 func MessageWidth(msg string) int {
 	w := 0
-	for _, c := range msg {
-		p := width.LookupRune(c)
-		switch p.Kind() {
-		case width.EastAsianWide, width.EastAsianFullwidth:
-			w += 2
-		case width.EastAsianNarrow, width.EastAsianHalfwidth:
-			w += 1
-		default:
-			w += 1
-		}
+	for _, r := range msg {
+		w += RuneWidth(r)
 	}
 	return w
 }
@@ -89,7 +95,7 @@ func Header(msg string) string {
 			maxWidth = w
 		}
 	}
-	header := "＿" + repeatPart(HeaderChars, maxWidth+4) + "＿"
+	header := "＿" + repeatPart(HeaderRunes, maxWidth+4) + "＿"
 	return header
 }
 
@@ -103,7 +109,7 @@ func Footer(msg string) string {
 			maxWidth = w
 		}
 	}
-	footer := "￣" + repeatPart(FooterChars, maxWidth+4) + "￣"
+	footer := "￣" + repeatPart(FooterRunes, maxWidth+4) + "￣"
 	return footer
 }
 
